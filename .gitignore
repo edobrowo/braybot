@@ -1,8 +1,5 @@
 node_modules/
-npm-debug.log*
 .vscode/*
-.DS_Store
 config.json
-.npm
-.eslintcache
 .env
+.DS_STORE
