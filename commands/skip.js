@@ -1,4 +1,5 @@
 const { SlashCommandBuilder } = require('discord.js');
+const util = require('../util');
 
 module.exports = {
     data: new SlashCommandBuilder()
@@ -14,28 +15,28 @@ module.exports = {
         const botChannelId = interaction.member.voice.channelId;
 
         if (!channel || userChannelId && userChannelId !== botChannelId) {
-            await interaction.reply({ content: 'you need to be in the same channel as me to skip songs silly', ephemeral: true });
-            return;
+            return await interaction.reply(util.responseError(`You need to be in the same channel as me to play music!`));
         }
 
         const player = interaction.client.player;
         const queue = player.getQueue(interaction.guild);
+        const queueLength = queue.tracks.length;
+
         if (!queue) {
-            return await interaction.reply({ content: 'nothing\'s playing silly', ephemeral: true });
+            return await interaction.reply(util.responseError(`No songs are currently playing!`));
         }
 
-        const clamp = (x, a, b) => Math.min(Math.max(x, a), b);
-        const n = interaction.options.getInteger('n') ?? 0;
+        const n = util.clamp(interaction.options.getInteger('n') ?? 0, 0, queueLength);
 
-        if (n > queue.tracks.length) {
+        if (n === queueLength) {
+            console.log(`Skipping all tracks, stopping player`);
             queue.clear();
-            queue.skip();
+            queue.stop();
         } else {
-            const i = clamp(n, 0, queue.tracks.length - 1);
-            console.log(i);
-            queue.skipTo(i);
+            console.log(`Skipping to track ${n}`);
+            queue.skipTo(n);
         }
 
-        interaction.reply(`*Skipping...*`);
+        interaction.reply(util.responseInfo(`*Skipping...*`));
     },
 };

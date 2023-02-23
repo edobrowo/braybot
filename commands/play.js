@@ -1,7 +1,8 @@
 const path = require('node:path');
 const { SlashCommandBuilder, PermissionsBitField } = require('discord.js');
-const { createAudioPlayer, createAudioResource, getVoiceConnection } = require('@discordjs/voice');
+//const { createAudioPlayer, createAudioResource, getVoiceConnection } = require('@discordjs/voice');
 const { QueryType, QueryResolver } = require('discord-player');
+const util = require('../util');
 
 module.exports = {
     data: new SlashCommandBuilder()
@@ -15,17 +16,16 @@ module.exports = {
         const channel = interaction.member.voice.channel;
         const userChannelId = interaction.guild.members.me.voice.channelId;
         const botChannelId = interaction.member.voice.channelId;
-        
         const botChannelPermissions = channel.permissionsFor(interaction.guild.members.me);
 
         if (!channel) {
-            return await interaction.reply({ content: 'you need to be in a channel to play music silly', ephemeral: true });
+            return await interaction.reply(util.responseError(`You need to be in a channel to play music!`));
         }
         if (userChannelId && userChannelId !== botChannelId) {
-            return await interaction.reply({ content: 'I need to be the same channel as you to play music silly', ephemeral: true });
+            return await interaction.reply(util.responseError(`You need to be in the same channel as me to play music!`));
         }
         if (!botChannelPermissions.has(PermissionsBitField.Flags.Connect) || !botChannelPermissions.has(PermissionsBitField.Flags.Speak)) {
-            return await interaction.reply({ content: 'I need permissions to join your call and talk silly', ephemeral: true });
+            return await interaction.reply(util.responseError(`I need permissions to join that channel!`));
         }
 
         const player = interaction.client.player;
@@ -34,7 +34,9 @@ module.exports = {
         try {
             if (!queue.connection) {
                 await queue.connect(channel);
+                console.log(`Connected to channel ${channel}`);
 
+                // TODO: join sound. Make a small module for playing MP3s.
                 /*const soundsPath = path.join(__dirname, '../resources/sounds/');
                 const joinCallSound = createAudioResource(path.join(soundsPath, 'BrayBotJoin02'));
 
@@ -43,47 +45,56 @@ module.exports = {
                 queue.connection.subscribe(joinCallSoundPlayer);
                 joinCallSoundPlayer.stop();*/
             }
-        } catch {
+        } catch(err) {
             queue.destroy();
-            return await interaction.reply({ content: 'what the helllll I couldn\'t join your channel shmeef', ephemeral: true });
+            console.log(`Failed to connect to channel ${channel} due to ${err}`);
+            return await interaction.reply(util.responseError(`I couldn't join that channel!`));
         }
 
         let query = interaction.options.getString('query');
         const queryType = QueryResolver.resolve(query);
 
-        // lmao
+        // TODO: add a Spotify query method to avoid this. On that note, some tracks on Spotify seem to be unavailable.
+        //      To work around this, add a redundancy search on YouTube if the Spotify query returns null.
+
+        // Extremely scuffed method to avoid queueing music videos from YouTube:
         if (queryType === QueryType.YOUTUBE_SEARCH) {
             query += ' lyrics';
         }
 
-        const result = await interaction.client.player
+        const result = await player
             .search(query, {
                 requestedBy: interaction.user,
                 QueryType: QueryType.AUTO
         });
 
         let trackList = result.tracks;
-        if (queryType === QueryType.YOUTUBE_SEARCH) {
-            trackList = [trackList[0]];
-        }
 
         if (trackList.length === 0) {
-            return await interaction.reply({ content: "didn't find it silly :(", ephemeral: true });
+            return await interaction.reply(util.responseError(`I couldn't find that song!`));
         }
 
-        let msg;
-        if (trackList.length === 1) {
+        // Only add the first track from a YouTube search query, otherwise add all tracks
+        if (queryType === QueryType.YOUTUBE_SEARCH) {
+            trackList = [trackList[0]];
             await queue.addTrack(trackList[0]);
-            msg = `*Added* **${trackList[0].title}** *to queue*`;
         } else {
             await queue.addTracks(trackList);
-            msg = `*Added ${trackList.length} tracks to queue*`;
+        }
+
+        // Set response message based on the number of tracks played
+        let msgStr;
+        if (trackList.length === 1) {
+            msgStr = `*Added* **${trackList[0].title}** *to queue*`;
+        } else {
+            msgStr = `*Added ${trackList.length} tracks to queue*`;
         }
 
         if (!queue.playing) {
             await queue.play();
+            console.log(`Player has started. Now playing ${trackList}`);
         }
 
-        interaction.reply(msg);
+        interaction.reply(util.responseInfo(msgStr));
     },
 };
