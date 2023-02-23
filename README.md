@@ -7,6 +7,6 @@ The goal of this bot is to provide an extremely simple interface for music playi
 * /play <query> - play a song given the search query.
 * /skip [n] - skip the next n (1 if not specified) songs.
 * /queue [n] - display the next n (10 if not specified) songs.
-* [TODO] /remove <i> - remove the ith song from queue.
-* [TODO] /insert <i> <query> - insert a song at the ith index in queue. May incorporate this feature with /play.
+* [TODO] /remove <index> - remove the ith song from queue.
+* [TODO] /insert <index> <query> - insert a song at the ith index in queue. May incorporate this feature with /play.
 * [TODO] /alias <name> <query> - alias a name to a search query.
