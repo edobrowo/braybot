@@ -26,17 +26,17 @@ module.exports = {
             return await interaction.reply(util.responseError(`No songs are currently playing!`));
         }
 
-        const n = util.clamp(interaction.options.getInteger('n') ?? 0, 0, queueLength);
+        const n = util.clamp(interaction.options.getInteger('n') ?? 1, 1, queueLength);
 
         if (n === queueLength) {
             console.log(`Skipping all tracks, stopping player`);
-            queue.clear();
-            queue.stop();
+            await queue.clear();
+            await queue.stop();
         } else {
-            console.log(`Skipping to track ${n}`);
-            queue.skipTo(n);
+            console.log(`Skipping to track ${n - 1}`);
+            await queue.skipTo(n - 1);
         }
 
-        interaction.reply(util.responseInfo(`*Skipping...*`));
+        await interaction.reply(util.responseInfo(`*Skipping...*`));
     },
 };

@@ -33,6 +33,6 @@ module.exports = {
             queueString += `... and ${queueLength - numTracksToDisplay} other tracks.`;
         }
 
-        interaction.reply(util.responseInfo(queueString));
+        await interaction.reply(util.responseInfo(queueString));
     },
 };

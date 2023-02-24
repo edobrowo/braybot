@@ -1,4 +1,5 @@
 const { SlashCommandBuilder } = require('discord.js');
+const util = require('../util');
 
 module.exports = {
     data: new SlashCommandBuilder()
@@ -8,13 +9,11 @@ module.exports = {
             option.setName('index')
                 .setDescription('The index of the song to skip')
                 .setRequired(true)),
-    async execute(client, interaction) {
+    async execute(interaction) {
         if (!interaction.member.voice.channel) {
-            await interaction.reply("you need to be in a channel to remove songs silly");
-            return;
+            return await interaction.reply(util.responseError(`You need to be in a channel to remove songs from the queue!`));
         }
 
-        const index = Number(interaction.options.getString('index'));
-        console.log(index);
+        const index = interaction.options.getString('index');
     },
 };

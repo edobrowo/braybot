@@ -53,6 +53,7 @@ module.exports = {
 
         let query = interaction.options.getString('query');
         const queryType = QueryResolver.resolve(query);
+        console.log(`Query is: ${query}, Query type is: ${queryType}`);
 
         // TODO: add a Spotify query method to avoid this. On that note, some tracks on Spotify seem to be unavailable.
         //      To work around this, add a redundancy search on YouTube if the Spotify query returns null.
@@ -74,13 +75,18 @@ module.exports = {
             return await interaction.reply(util.responseError(`I couldn't find that song!`));
         }
 
+        // There's an issue with how discord-player handles Spotify albums so for now they're disabled
+        if (queryType === QueryType.SPOTIFY_ALBUM) {
+            return await interaction.reply(util.responseError(`I can't play Spotify Albums right now, sorry :(`));
+        }
+
         // Only add the first track from a YouTube search query, otherwise add all tracks
         if (queryType === QueryType.YOUTUBE_SEARCH) {
             trackList = [trackList[0]];
-            await queue.addTrack(trackList[0]);
-        } else {
-            await queue.addTracks(trackList);
         }
+
+        console.log(`Adding ${trackList}`);
+        await queue.addTracks(trackList);
 
         // Set response message based on the number of tracks played
         let msgStr;
@@ -91,10 +97,11 @@ module.exports = {
         }
 
         if (!queue.playing) {
+            console.log(queue.play);
             await queue.play();
             console.log(`Player has started. Now playing ${trackList}`);
         }
 
-        interaction.reply(util.responseInfo(msgStr));
+        await interaction.reply(util.responseInfo(msgStr));
     },
 };
