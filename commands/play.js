@@ -102,6 +102,6 @@ module.exports = {
             console.log(`Player has started. Now playing ${trackList}`);
         }
 
-        await interaction.reply(util.responseInfo(msgStr));
+        return await interaction.reply(util.responseInfo(msgStr));
     },
 };
